@@ -3,6 +3,7 @@ package com.googlecode.lanterna.gui2.dialogs;
 import com.googlecode.lanterna.CJKUtils;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
+import com.googlecode.lanterna.gui2.listbox.ActionListBox;
 
 import java.util.List;
 

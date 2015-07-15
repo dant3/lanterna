@@ -16,7 +16,7 @@
  * 
  * Copyright (C) 2010-2015 Martin
  */
-package com.googlecode.lanterna.gui2;
+package com.googlecode.lanterna.gui2.listbox;
 
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
@@ -27,6 +27,7 @@ import com.googlecode.lanterna.input.KeyType;
  * Created by martin on 04/10/14.
  */
 public class ActionListBox extends AbstractListBox<Runnable, ActionListBox> {
+    private final BasicListBoxModel<Runnable> model = new BasicListBoxModel<Runnable>();
 
     public ActionListBox() {
         this(null);
@@ -34,25 +35,20 @@ public class ActionListBox extends AbstractListBox<Runnable, ActionListBox> {
 
     public ActionListBox(TerminalSize preferredSize) {
         super(preferredSize);
+        super.setDataModel(model);
     }
 
     @Override
-    public void addItem(Runnable object) {
-        super.addItem(object);
+    protected final synchronized void setDataModel(ListBoxModel<? extends Runnable> model) {
+        throw new UnsupportedOperationException();
     }
 
     public void addItem(final String label, final Runnable action) {
-        addItem(new Runnable() {
-            @Override
-            public void run() {
-                action.run();
-            }
+        model.addItem(labeledAction(label, action));
+    }
 
-            @Override
-            public String toString() {
-                return label;
-            }
-        });
+    public void clear() {
+        model.clear();
     }
 
     @Override
@@ -62,14 +58,29 @@ public class ActionListBox extends AbstractListBox<Runnable, ActionListBox> {
 
     @Override
     public Result handleKeyStroke(KeyStroke keyStroke) {
-        Object selectedItem = getSelectedItem();
+        Runnable selectedItem = getSelectedItem();
         if(selectedItem != null &&
                 (keyStroke.getKeyType() == KeyType.Enter ||
                 (keyStroke.getKeyType() == KeyType.Character && keyStroke.getCharacter() == ' '))) {
 
-            ((Runnable)selectedItem).run();
+            selectedItem.run();
             return Result.HANDLED;
         }
         return super.handleKeyStroke(keyStroke);
+    }
+
+
+    private static Runnable labeledAction(final String label, final Runnable action) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                action.run();
+            }
+
+            @Override
+            public String toString() {
+                return label;
+            }
+        };
     }
 }

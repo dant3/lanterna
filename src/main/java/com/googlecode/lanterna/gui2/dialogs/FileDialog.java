@@ -2,6 +2,7 @@ package com.googlecode.lanterna.gui2.dialogs;
 
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
+import com.googlecode.lanterna.gui2.listbox.ActionListBox;
 
 import java.io.File;
 import java.util.Arrays;
@@ -153,8 +154,8 @@ public class FileDialog extends DialogWindow {
     }
 
     private void reloadViews(final File directory) {
-        directoryListBox.clearItems();
-        fileListBox.clearItems();
+        directoryListBox.clear();
+        fileListBox.clear();
         File []entries = directory.listFiles();
         if(entries == null) {
             return;

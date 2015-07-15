@@ -6,6 +6,8 @@ import com.googlecode.lanterna.gui2.dialogs.DialogWindow;
 import com.googlecode.lanterna.gui2.dialogs.ListSelectDialog;
 import com.googlecode.lanterna.gui2.dialogs.TextInputDialog;
 import com.googlecode.lanterna.gui2.dialogs.TextInputDialogBuilder;
+import com.googlecode.lanterna.gui2.listbox.BasicListBoxModel;
+import com.googlecode.lanterna.gui2.listbox.RadioBoxList;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -266,10 +268,12 @@ public class DynamicGridLayoutTest extends TestBase {
             contentPane.setLayoutManager(new GridLayout(2));
             contentPane.addComponent(new Label("Horizontal alignment:"));
             final RadioBoxList<GridLayout.Alignment> radioBoxesHorizontalAlignment = new RadioBoxList<GridLayout.Alignment>();
-            radioBoxesHorizontalAlignment.addItem(GridLayout.Alignment.BEGINNING);
-            radioBoxesHorizontalAlignment.addItem(GridLayout.Alignment.CENTER);
-            radioBoxesHorizontalAlignment.addItem(GridLayout.Alignment.END);
-            radioBoxesHorizontalAlignment.addItem(GridLayout.Alignment.FILL);
+            final BasicListBoxModel<GridLayout.Alignment> alignments = new BasicListBoxModel<GridLayout.Alignment>();
+            radioBoxesHorizontalAlignment.setDataModel(alignments);
+            alignments.addItem(GridLayout.Alignment.BEGINNING);
+            alignments.addItem(GridLayout.Alignment.CENTER);
+            alignments.addItem(GridLayout.Alignment.END);
+            alignments.addItem(GridLayout.Alignment.FILL);
             radioBoxesHorizontalAlignment.setCheckedItem(gridLayoutData.horizontalAlignment);
             contentPane.addComponent(radioBoxesHorizontalAlignment);
 
@@ -278,10 +282,7 @@ public class DynamicGridLayoutTest extends TestBase {
 
             contentPane.addComponent(new Label("Vertical alignment:"));
             final RadioBoxList<GridLayout.Alignment> radioBoxesVerticalAlignment = new RadioBoxList<GridLayout.Alignment>();
-            radioBoxesVerticalAlignment.addItem(GridLayout.Alignment.BEGINNING);
-            radioBoxesVerticalAlignment.addItem(GridLayout.Alignment.CENTER);
-            radioBoxesVerticalAlignment.addItem(GridLayout.Alignment.END);
-            radioBoxesVerticalAlignment.addItem(GridLayout.Alignment.FILL);
+            radioBoxesVerticalAlignment.setDataModel(alignments);
             radioBoxesVerticalAlignment.setCheckedItem(gridLayoutData.verticalAlignment);
             contentPane.addComponent(radioBoxesVerticalAlignment);
 

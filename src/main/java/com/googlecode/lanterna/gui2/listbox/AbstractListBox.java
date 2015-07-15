@@ -16,15 +16,16 @@
  * 
  * Copyright (C) 2010-2015 Martin
  */
-package com.googlecode.lanterna.gui2;
+package com.googlecode.lanterna.gui2.listbox;
 
 import com.googlecode.lanterna.Symbols;
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
+import com.googlecode.lanterna.gui2.AbstractInteractableComponent;
+import com.googlecode.lanterna.gui2.Interactable;
+import com.googlecode.lanterna.gui2.InteractableRenderer;
+import com.googlecode.lanterna.gui2.TextGUIGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Base class for several list box implementations, this will handle the list of items and the scrollbar for you
@@ -32,7 +33,7 @@ import java.util.List;
  * @author Martin
  */
 public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extends AbstractInteractableComponent<T> {
-    private final List<V> items;
+    private final ListBoxProxyModel<V> listBoxModel = new ListBoxProxyModel<V>();
     private int selectedIndex;
     private ListItemRenderer<V,T> listItemRenderer;
 
@@ -41,10 +42,33 @@ public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extend
     }
 
     protected AbstractListBox(TerminalSize size) {
-        this.items = new ArrayList<V>();
         this.selectedIndex = -1;
         setPreferredSize(size);
         setListItemRenderer(createDefaultListItemRenderer());
+        listBoxModel.addObserver(new ListBoxModel.Observer() {
+            @Override
+            public void onDataChanged() {
+                AbstractListBox.this.onDataChanged();
+                invalidate();
+            }
+        });
+    }
+
+    protected void onDataChanged() {
+        int modelSize = listBoxModel.size();
+        if (modelSize > 0 && selectedIndex == -1) {
+            selectedIndex = 0;
+        } else if (modelSize <= 0) {
+            selectedIndex = -1;
+        }
+    }
+
+    protected synchronized void setDataModel(ListBoxModel<? extends V> model) {
+        this.listBoxModel.setDelegated(model);
+    }
+
+    protected ListBoxModel<V> getDataModel() {
+        return this.listBoxModel;
     }
 
     @Override
@@ -97,14 +121,14 @@ public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extend
                     return Result.MOVE_FOCUS_LEFT;
 
                 case ArrowDown:
-                    if(items.isEmpty() || selectedIndex == items.size() - 1) {
+                    if (listBoxModel.isEmpty() || selectedIndex == listBoxModel.size() - 1) {
                         return Result.MOVE_FOCUS_DOWN;
                     }
                     selectedIndex++;
                     return Result.HANDLED;
 
                 case ArrowUp:
-                    if(items.isEmpty() || selectedIndex == 0) {
+                    if(listBoxModel.isEmpty() || selectedIndex == 0) {
                         return Result.MOVE_FOCUS_UP;
                     }
                     selectedIndex--;
@@ -115,7 +139,7 @@ public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extend
                     return Result.HANDLED;
 
                 case End:
-                    selectedIndex = items.size() - 1;
+                    selectedIndex = listBoxModel.size() - 1;
                     return Result.HANDLED;
 
                 default:
@@ -129,39 +153,21 @@ public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extend
 
     @Override
     protected synchronized void afterEnterFocus(FocusChangeDirection direction, Interactable previouslyInFocus) {
-        if(items.isEmpty())
+        if(listBoxModel.isEmpty())
             return;
 
         if(direction == FocusChangeDirection.DOWN)
             selectedIndex = 0;
         else if(direction == FocusChangeDirection.UP)
-            selectedIndex = items.size() - 1;
-    }
-
-    public synchronized void addItem(V item) {
-        if (item == null) {
-            return;
-        }
-
-        items.add(item);
-        if (selectedIndex == -1) {
-            selectedIndex = 0;
-        }
-        invalidate();
-    }
-
-    public synchronized void clearItems() {
-        items.clear();
-        selectedIndex = -1;
-        invalidate();
+            selectedIndex = listBoxModel.size() - 1;
     }
 
     public synchronized int indexOf(V item) {
-        return items.indexOf(item);
+        return listBoxModel.indexOf(item);
     }
 
     public synchronized V getItemAt(int index) {
-        return items.get(index);
+        return listBoxModel.getItemAt(index);
     }
 
     public boolean isEmpty() {
@@ -169,15 +175,11 @@ public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extend
     }
 
     public synchronized int getItemCount() {
-        return items.size();
-    }
-
-    List<V> getItems() {
-        return items;
+        return listBoxModel.size();
     }
 
     public synchronized Iterable<V> getItemsIterable() {
-        return new ArrayList<V>(items);
+        return listBoxModel;
     }
 
     public synchronized void setSelectedIndex(int index) {
@@ -185,8 +187,8 @@ public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extend
         if(selectedIndex < 0) {
             selectedIndex = 0;
         }
-        if(selectedIndex > items.size() - 1) {
-            selectedIndex = items.size() - 1;
+        if(selectedIndex > listBoxModel.size() - 1) {
+            selectedIndex = listBoxModel.size() - 1;
         }
         invalidate();
     }
@@ -199,7 +201,7 @@ public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extend
         if (selectedIndex == -1) {
             return null;
         } else {
-            return items.get(selectedIndex);
+            return listBoxModel.getItemAt(selectedIndex);
         }
     }
 
@@ -243,7 +245,7 @@ public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extend
         public TerminalSize getPreferredSize(T listBox) {
             int maxWidth = 5;   //Set it to something...
             int index = 0;
-            for (V item : listBox.getItems()) {
+            for (V item : listBox.getItemsIterable()) {
                 String itemString = listBox.getListItemRenderer().getLabel(listBox, index++, item);
                 if (itemString.length() > maxWidth) {
                     maxWidth = itemString.length();
@@ -258,7 +260,7 @@ public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extend
             int componentHeight = graphics.getSize().getRows();
             int componentWidth = graphics.getSize().getColumns();
             int selectedIndex = listBox.getSelectedIndex();
-            List<V> items = listBox.getItems();
+            ListBoxModel<V> items = listBox.getDataModel();
             ListItemRenderer<V,T> listItemRenderer = listBox.getListItemRenderer();
             pageSize = componentHeight;
 
@@ -289,7 +291,7 @@ public abstract class AbstractListBox<V, T extends AbstractListBox<V, T>> extend
                         graphics.newTextGraphics(new TerminalPosition(0, i - scrollTopIndex), itemSize),
                         listBox,
                         i,
-                        items.get(i),
+                        items.getItemAt(i),
                         selectedIndex == i,
                         listBox.isFocused());
             }

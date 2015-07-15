@@ -1,6 +1,10 @@
 package com.googlecode.lanterna.gui2;
 
 import com.googlecode.lanterna.TerminalSize;
+import com.googlecode.lanterna.gui2.listbox.ActionListBox;
+import com.googlecode.lanterna.gui2.listbox.BasicListBoxModel;
+import com.googlecode.lanterna.gui2.listbox.CheckBoxList;
+import com.googlecode.lanterna.gui2.listbox.RadioBoxList;
 
 import java.io.IOException;
 
@@ -21,13 +25,16 @@ public class ListBoxTest extends TestBase {
         horizontalPanel.setLayoutManager(new LinearLayout(Direction.HORIZONTAL));
 
         TerminalSize size = new TerminalSize(14, 10);
+        BasicListBoxModel<String> stringsModel = new BasicListBoxModel<String>();
         CheckBoxList<String> checkBoxList = new CheckBoxList<String>(size);
+        checkBoxList.setDataModel(stringsModel);
         RadioBoxList<String> radioBoxList = new RadioBoxList<String>(size);
+        radioBoxList.setDataModel(stringsModel);
+
         ActionListBox actionListBox = new ActionListBox(size);
         for(int i = 0; i < 30; i++) {
             final String itemText = "Item " + (i + 1);
-            checkBoxList.addItem(itemText);
-            radioBoxList.addItem(itemText);
+            stringsModel.addItem(itemText);
             actionListBox.addItem(itemText, new Runnable() {
                 @Override
                 public void run() {

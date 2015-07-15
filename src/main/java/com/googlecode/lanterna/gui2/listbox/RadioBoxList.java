@@ -16,7 +16,7 @@
  * 
  * Copyright (C) 2010-2015 Martin
  */
-package com.googlecode.lanterna.gui2;
+package com.googlecode.lanterna.gui2.listbox;
 
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.input.KeyStroke;
@@ -49,6 +49,19 @@ public class RadioBoxList<V> extends AbstractListBox<V, RadioBoxList<V>> {
         this.checkedIndex = -1;
     }
 
+    @Override // made public visible
+    public synchronized void setDataModel(ListBoxModel<? extends V> model) {
+        super.setDataModel(model);
+    }
+
+    @Override
+    protected void onDataChanged() {
+        if (getDataModel().size() < checkedIndex) {
+            checkedIndex = -1;
+        }
+        super.onDataChanged();
+    }
+
     @Override
     protected ListItemRenderer<V,RadioBoxList<V>> createDefaultListItemRenderer() {
         return new RadioBoxListItemRenderer<V>();
@@ -63,12 +76,6 @@ public class RadioBoxList<V> extends AbstractListBox<V, RadioBoxList<V>> {
             return Result.HANDLED;
         }
         return super.handleKeyStroke(keyStroke);
-    }
-
-    @Override
-    public synchronized void clearItems() {
-        checkedIndex = -1;
-        super.clearItems();
     }
 
     /**
@@ -163,7 +170,7 @@ public class RadioBoxList<V> extends AbstractListBox<V, RadioBoxList<V>> {
         @Override
         protected String getLabel(RadioBoxList<V> listBox, int index, V item) {
             String check = " ";
-            if(listBox.checkedIndex == index)
+            if (listBox.checkedIndex == index)
                 check = "o";
 
             String text = (item != null ? item : "<null>").toString();
