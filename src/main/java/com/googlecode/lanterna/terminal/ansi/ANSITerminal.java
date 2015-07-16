@@ -40,6 +40,7 @@ import java.nio.charset.Charset;
 public abstract class ANSITerminal extends StreamBasedTerminal implements ExtendedTerminal {
 
     private boolean inPrivateMode;
+    private DealWithPrivateMode dealWithPrivateMode;
 
     @SuppressWarnings("WeakerAccess")
     protected ANSITerminal(InputStream terminalInput, OutputStream terminalOutput, Charset terminalCharset) {
@@ -193,6 +194,7 @@ public abstract class ANSITerminal extends StreamBasedTerminal implements Extend
         }
         writeCSISequenceToTerminal((byte) '?', (byte) '1', (byte) '0', (byte) '4', (byte) '9', (byte) 'h');
         inPrivateMode = true;
+        Thread.setDefaultUncaughtExceptionHandler(dealWithPrivateMode = new DealWithPrivateMode());
     }
 
     @Override
@@ -204,6 +206,7 @@ public abstract class ANSITerminal extends StreamBasedTerminal implements Extend
         setCursorVisible(true);
         writeCSISequenceToTerminal((byte) '?', (byte) '1', (byte) '0', (byte) '4', (byte) '9', (byte) 'l');
         inPrivateMode = false;
+        Thread.setDefaultUncaughtExceptionHandler(dealWithPrivateMode.parentHandler);
     }
 
     @Override
@@ -294,5 +297,21 @@ public abstract class ANSITerminal extends StreamBasedTerminal implements Extend
      */
     void saveCursorPosition() throws IOException {
         writeCSISequenceToTerminal("s".getBytes());
+    }
+
+
+    private class DealWithPrivateMode implements Thread.UncaughtExceptionHandler {
+        private final Thread.UncaughtExceptionHandler parentHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            try {
+                exitPrivateMode();
+            } catch (IOException | IllegalStateException e1) {
+                e1.printStackTrace();
+            } finally {
+                parentHandler.uncaughtException(t, e);
+            }
+        }
     }
 }
